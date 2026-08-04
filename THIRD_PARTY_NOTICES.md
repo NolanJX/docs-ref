@@ -54,11 +54,11 @@ SOFTWARE.
 ## Nuxt Docs
 
 - https://nuxt.com/llms.txt
-- https://github.com/nuxt-content/nuxt-llms
+- https://github.com/nuxt/nuxt
 
-MIT License
+The MIT License (MIT)
 
-Copyright (c) Nuxt Project
+Copyright (c) 2016-present - Nuxt Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
