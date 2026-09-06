@@ -1,0 +1,429 @@
+---
+title: "Customize components"
+description: "Learn how to customize Nuxt UI components with the Tailwind Variants API for advanced, flexible, and maintainable styling."
+canonical_url: "https://ui.nuxt.com/docs/getting-started/theme/components"
+---
+# Customize components
+
+> Learn how to customize Nuxt UI components with the Tailwind Variants API for advanced, flexible, and maintainable styling.
+
+## Tailwind Variants
+
+Nuxt UI components are styled using the [Tailwind Variants](https://www.tailwind-variants.org/) API, which provides a powerful way to create variants and manage component styles.
+
+### Slots
+
+Components can have multiple `slots`, each representing a distinct HTML element or section within the component. These slots allow for flexible content insertion and styling.
+
+Let's take the [Card](https://ui.nuxt.com/docs/components/card) component as an example which has multiple slots:
+
+```ts [src/theme/card.ts]
+export default {
+  slots: {
+    root: 'rounded-lg overflow-hidden',
+    header: 'p-4 sm:px-6',
+    title: 'text-highlighted font-semibold',
+    description: 'mt-1 text-muted text-sm',
+    body: 'p-4 sm:p-6',
+    footer: 'p-4 sm:px-6'
+  }
+}
+```
+
+```vue [src/runtime/components/Card.vue]
+<template>
+  <Primitive :as="props.as" data-slot="root" :class="ui.root({ class: [props.ui?.root, props.class] })">
+    <div data-slot="header" :class="ui.header({ class: props.ui?.header })">
+      <slot name="header" />
+    </div>
+
+    <div data-slot="body" :class="ui.body({ class: props.ui?.body })">
+      <slot />
+    </div>
+
+    <div data-slot="footer" :class="ui.footer({ class: props.ui?.footer })">
+      <slot name="footer" />
+    </div>
+  </Primitive>
+</template>
+```
+
+> [!NOTE]
+> 
+> The snippets above are abridged. The real components also carry `v-if` guards on each slot and the theme defines `variant` styles on top of the slots.
+
+Some components don't have slots, they are just composed of a single root element. In this case, the theme only defines the `base` slot like the [Container](https://ui.nuxt.com/docs/components/container) component for example:
+
+```ts [src/theme/container.ts]
+export default {
+  base: 'w-full max-w-(--ui-container) mx-auto px-4 sm:px-6 lg:px-8'
+}
+```
+
+```vue [src/runtime/components/Container.vue]
+<template>
+  <Primitive :as="props.as" :class="ui({ class: [props.ui?.base, props.class] })">
+    <slot />
+  </Primitive>
+</template>
+```
+
+> [!NOTE]
+> 
+> Components without slots still have a [`ui` prop](#ui-prop). It exposes a single `base` key instead of one key per slot. [Link](https://ui.nuxt.com/docs/components/link) and [Icon](https://ui.nuxt.com/docs/components/icon) are the exceptions: they have no `ui` prop, so use the [`class` prop](#class-prop) to override their styles.
+
+### Variants
+
+Components support `variants`, which dynamically adjust the styles of different `slots` based on component props.
+
+For example, the [Avatar](https://ui.nuxt.com/docs/components/avatar) component uses a `size` variant to control its appearance:
+
+```ts [src/theme/avatar.ts]
+export default {
+  slots: {
+    root: 'inline-flex items-center justify-center shrink-0 select-none overflow-hidden rounded-full align-middle bg-elevated',
+    image: 'h-full w-full rounded-[inherit] object-cover'
+  },
+  variants: {
+    size: {
+      sm: {
+        root: 'size-7 text-sm'
+      },
+      md: {
+        root: 'size-8 text-base'
+      },
+      lg: {
+        root: 'size-9 text-lg'
+      }
+    }
+  },
+  defaultVariants: {
+    size: 'md'
+  }
+}
+```
+
+This way, the `size` prop will apply the corresponding styles to the `root` slot:
+
+```vue
+<template>
+  <UAvatar src="https://github.com/nuxt.png" size="lg" />
+</template>
+```
+
+### Default Variants
+
+The `defaultVariants` property sets the default value for each variant when no prop is passed.
+
+For example, the [Avatar](https://ui.nuxt.com/docs/components/avatar) component has its default size set to `md`:
+
+```ts [src/theme/avatar.ts]
+export default {
+  slots: {
+    root: 'inline-flex items-center justify-center shrink-0 select-none overflow-hidden rounded-full align-middle bg-elevated',
+    image: 'h-full w-full rounded-[inherit] object-cover'
+  },
+  variants: {
+    size: {
+      sm: {
+        root: 'size-7 text-sm'
+      },
+      md: {
+        root: 'size-8 text-base'
+      },
+      lg: {
+        root: 'size-9 text-lg'
+      }
+    }
+  },
+  defaultVariants: {
+    size: 'md'
+  }
+}
+```
+
+**Nuxt:**
+
+> [!TIP]
+> See: /docs/getting-started/installation/nuxt#themedefaultvariants
+> 
+> You can use the `theme.defaultVariants` option in your `nuxt.config.ts` to override the default `size` and `color` of every component that uses `md` and `primary`.
+
+**Vue:**
+
+> [!TIP]
+> See: /docs/getting-started/installation/vue#themedefaultvariants
+> 
+> You can use the `theme.defaultVariants` option in your `vite.config.ts` to override the default `size` and `color` of every component that uses `md` and `primary`.
+
+### Compound Variants
+
+Some components use the `compoundVariants` property to apply classes when multiple variant conditions are met at the same time.
+
+For example, the [Button](https://ui.nuxt.com/docs/components/button) component uses the `compoundVariants` property to apply classes for a specific `color` and `variant` combination:
+
+```ts [src/theme/button.ts]
+import type { ModuleOptions } from '../module'
+
+export default (options: Required<ModuleOptions>) => ({
+  slots: {
+    base: ['rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75', options.theme.transitions && 'transition-colors']
+  },
+  variants: {
+    color: {
+      ...Object.fromEntries((options.theme.colors || []).map((color: string) => [color, ''])),
+      neutral: ''
+    },
+    variant: {
+      solid: '',
+      outline: '',
+      soft: '',
+      subtle: '',
+      ghost: '',
+      link: ''
+    }
+  },
+  compoundVariants: [
+    ...(options.theme.colors || []).map((color: string) => ({
+      color,
+      variant: 'outline',
+      class: `ring ring-inset ring-${color}/50 text-${color} hover:bg-${color}/10 active:bg-${color}/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent outline-${color}/25 focus-visible:outline-3 focus-visible:ring-${color}`
+    })),
+    {
+      color: 'neutral',
+      variant: 'outline',
+      class: 'ring ring-inset ring-accented text-default bg-default hover:bg-elevated active:bg-elevated disabled:bg-default aria-disabled:bg-default outline-inverted/25 focus-visible:outline-3 focus-visible:ring-inverted'
+    }
+  ],
+  defaultVariants: {
+    color: 'primary',
+    variant: 'solid'
+  }
+})
+```
+
+## Customize theme
+
+You have multiple ways to customize the appearance of Nuxt UI components, you can do it for all components at once or on a per-component basis.
+
+> [!NOTE]
+> 
+> Tailwind Variants uses [`tailwind-merge`](https://github.com/dcastil/tailwind-merge) under the hood to merge classes so you don't have to worry about conflicting classes.
+
+> [!TIP]
+> 
+> You can explore the theme for each component in two ways:
+> 
+> - Check the `Theme` section in the documentation of each individual component.
+> - Browse the source code directly in the GitHub repository at [`src/theme`](https://github.com/nuxt/ui/tree/v4/src/theme).
+
+### Global config
+
+**Nuxt:**
+
+You can override the theme of components globally inside your `app.config.ts` by using the exact same structure as the theme object.
+
+**Vue:**
+
+You can override the theme of components globally inside your `vite.config.ts` by using the exact same structure as the theme object.
+
+You can customize the [`slots`](#slots), [`variants`](#variants), [`compoundVariants`](#compound-variants) and [`defaultVariants`](#default-variants) of a component to change the default theme of a component:
+
+**Nuxt:**
+
+```ts [app/app.config.ts]
+export default defineAppConfig({
+  ui: {
+    button: {
+      slots: {
+        base: 'font-bold'
+      },
+      variants: {
+        size: {
+          md: {
+            leadingIcon: 'size-4'
+          }
+        }
+      },
+      compoundVariants: [{
+        color: 'neutral',
+        variant: 'outline',
+        class: 'ring-default hover:bg-accented'
+      }],
+      defaultVariants: {
+        color: 'neutral',
+        variant: 'outline'
+      }
+    }
+  }
+})
+```
+
+**Vue:**
+
+```ts [vite.config.ts]
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import ui from '@nuxt/ui/vite'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    ui({
+      ui: {
+        button: {
+          slots: {
+            base: 'font-bold'
+          },
+          variants: {
+            size: {
+              md: {
+                leadingIcon: 'size-4'
+              }
+            }
+          },
+          compoundVariants: [{
+            color: 'neutral',
+            variant: 'outline',
+            class: 'ring-default hover:bg-accented'
+          }],
+          defaultVariants: {
+            color: 'neutral',
+            variant: 'outline'
+          }
+        }
+      }
+    })
+  ]
+})
+```
+
+> [!NOTE]
+> 
+> In this example, `font-bold` overrides `font-medium` on all buttons, `size-4` overrides `size-5` class on the leading icon when `size="md"` and `ring-default hover:bg-accented` overrides `ring-accented hover:bg-elevated` when `color="neutral"` and `variant="outline"`. The buttons now defaults to `color="neutral"` and `variant="outline"`.
+
+By default, these classes are merged onto the component's defaults. You can also set a slot to a function to replace them instead. It receives the slot's default classes as its argument, so you can reuse part of them. Classes from `variants` and `compoundVariants` still apply on top, exactly like when you pass a string.
+
+**Nuxt:**
+
+```ts [app/app.config.ts]
+export default defineAppConfig({
+  ui: {
+    button: {
+      slots: {
+        label: () => 'text-base font-bold'
+      }
+    }
+  }
+})
+```
+
+**Vue:**
+
+```ts [vite.config.ts]
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import ui from '@nuxt/ui/vite'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    ui({
+      ui: {
+        button: {
+          slots: {
+            label: () => 'text-base font-bold'
+          }
+        }
+      }
+    })
+  ]
+})
+```
+
+**Nuxt:**
+
+> [!TIP]
+> See: /docs/getting-started/installation/nuxt#themeunstyled
+> 
+> To remove the default classes from all components at once, use the `theme.unstyled` option in your `nuxt.config.ts`.
+
+**Vue:**
+
+> [!TIP]
+> See: /docs/getting-started/installation/vue#themeunstyled
+> 
+> To remove the default classes from all components at once, use the `theme.unstyled` option in your `vite.config.ts`.
+
+### Theme component
+
+The [Theme](https://ui.nuxt.com/docs/components/theme) component overrides slots and prop defaults for all of its descendants, without affecting the rest of the app. This takes priority over the global config, but the `ui` and `class` props still win over it. Slots accept the same function form to replace their classes instead of merging. It is resolved at the same point as the [`ui` prop](#ui-prop), so it behaves the same way.
+
+```vue [ThemeUiExample.vue]
+<template>
+  <UTheme
+    :ui="{
+      button: {
+        base: 'rounded-full'
+      }
+    }"
+  >
+    <div class="flex items-center gap-2">
+      <UButton label="Button" color="neutral" />
+      <UButton label="Button" color="neutral" variant="outline" />
+      <UButton label="Button" color="neutral" variant="subtle" />
+    </div>
+  </UTheme>
+</template>
+```
+
+### `ui` prop
+
+You can also override a component's **slots** using the `ui` prop. This takes priority over both global config and resolved `variants`.
+
+```vue
+<template>
+  <UButton trailing-icon="i-lucide-chevron-right" size="md" color="neutral" variant="outline" :ui="{
+  trailingIcon: 'rotate-90 size-3'
+}">
+    Button
+  </UButton>
+</template>
+```
+
+> [!NOTE]
+> 
+> In this example, the `trailingIcon` slot is overwritten with `size-3` even though the `md` size variant would apply a `size-5` class to it.
+
+A slot value can also be a function to replace its classes instead of merging them:
+
+```vue
+<template>
+  <UButton :ui="{ label: () => 'text-base font-bold' }" label="Button" />
+</template>
+```
+
+> [!NOTE]
+> 
+> The `ui` prop is resolved after the `variants`, so unlike in the global config, a function here replaces the slot's **resolved** classes. Its argument contains what the `variants` and `compoundVariants` matched. A `class` prop on the same slot is still merged on top of the returned classes.
+
+### `class` prop
+
+Use the `class` prop to override the classes of the `root` or `base` slot. This takes priority over both global config and resolved `variants`.
+
+```vue
+<template>
+  <UButton class="font-bold rounded-full">
+    Button
+  </UButton>
+</template>
+```
+
+> [!NOTE]
+> 
+> In this example, the `font-bold` class will override the default `font-medium` class on this button.
+
+
+## Sitemap
+
+See the full [sitemap](https://ui.nuxt.com/sitemap.md) for all pages.

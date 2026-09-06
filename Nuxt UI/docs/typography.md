@@ -1,0 +1,328 @@
+---
+title: "Introduction"
+description: "Beautiful typography components and utilities to style your content with Nuxt UI."
+canonical_url: "https://ui.nuxt.com/docs/typography"
+---
+# Introduction
+
+> Beautiful typography components and utilities to style your content with Nuxt UI.
+
+Nuxt UI provides beautifully styled **Prose components** for your markdown content. Whether you render markdown with a library or use prose components directly, Nuxt UI applies its design system so your content automatically adapts to your application's theme.
+
+**Nuxt:**
+
+> [!NOTE]
+> 
+> Prose components are automatically enabled when using [`@nuxtjs/mdc`](https://github.com/nuxt-content/mdc), [`@nuxt/content`](https://github.com/nuxt/content) or [`@comark/nuxt`](https://comark.dev/rendering/nuxt).<br />
+> 
+> <br />
+> 
+> Otherwise, enable the [`prose`](https://ui.nuxt.com/docs/getting-started/installation/nuxt#prose) option in your `nuxt.config.ts`:
+> 
+> ```ts [nuxt.config.ts]
+> export default defineNuxtConfig({
+>   modules: ['@nuxt/ui'],
+>   ui: {
+>     prose: true
+>   }
+> })
+> ```
+
+> [!TIP]
+> See: /docs/getting-started/integrations/content
+> 
+> For Nuxt Content installation and setup, check the **Content integration** guide.
+
+**Vue:**
+
+> [!NOTE]
+> 
+> To use prose components with Vue, you need to enable the [`prose`](https://ui.nuxt.com/docs/getting-started/installation/vue#prose) option in your `vite.config.ts`:
+> 
+> ```ts [vite.config.ts]
+> import { defineConfig } from 'vite'
+> import vue from '@vitejs/plugin-vue'
+> import ui from '@nuxt/ui/vite'
+> 
+> export default defineConfig({
+>   plugins: [
+>     vue(),
+>     ui({
+>       prose: true
+>     })
+>   ]
+> })
+> ```
+
+## Usage
+
+**Nuxt:**
+
+There are multiple ways to render styled content:
+
+1. **Markdown rendering**: use ContentRenderer, MDC, Markdown, or MarkdownDocument to render markdown with automatic prose styling
+2. **Direct Vue usage**: import and use prose components directly in your Vue templates
+
+**Vue:**
+
+There are multiple ways to render styled content:
+
+1. **Markdown rendering**: use Markdown or MarkdownDocument to render markdown with automatic prose styling
+2. **Direct Vue usage**: import and use prose components directly in your Vue templates
+
+### With ContentRenderer `Nuxt only`
+
+When using [`@nuxt/content`](https://github.com/nuxt/content), render your collection pages with the [`<ContentRenderer>`](https://content.nuxt.com/docs/components/content-renderer) component:
+
+```vue [pages/[...slug].vue]
+<script setup lang="ts">
+const route = useRoute()
+
+const { data: page } = await useAsyncData(route.path, () => queryCollection('docs').path(route.path).first())
+</script>
+
+<template>
+  <ContentRenderer :value="page" />
+</template>
+```
+
+### With MDC component `Nuxt only`
+
+When using [`@nuxtjs/mdc`](https://github.com/nuxt-content/mdc) or [`@nuxt/content`](https://github.com/nuxt/content), use the [`<MDC>`](https://github.com/nuxt-content/mdc) component to render markdown strings:
+
+```vue
+<script setup lang="ts">
+const value = `# Hello World
+
+Learn more about the **MDC** component in the [documentation](https://github.com/nuxt-content/mdc).
+`
+</script>
+
+<template>
+  <MDC :value="value" />
+</template>
+```
+
+> [!TIP]
+> See: https://comark.dev
+> 
+> `@nuxtjs/mdc` is being deprecated in favor of [Comark](https://comark.dev). Your existing markdown files are compatible, no content changes needed.
+
+### With Markdown component
+
+[Comark](https://comark.dev) renders markdown with built-in support for streaming. It incrementally renders tokens as they arrive, making it ideal for AI chat responses and any other dynamic markdown content.
+
+**Nuxt:**
+
+```vue
+<script setup lang="ts">
+import shiki from '@comark/nuxt/plugins/shiki'
+
+const markdown = ref('# Hello World\n\nThis is **streaming** markdown.')
+</script>
+
+<template>
+  <Markdown :value="markdown" :plugins="[shiki()]" />
+</template>
+```
+
+**Vue:**
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { Markdown } from '@comark/vue'
+import shiki from '@comark/vue/plugins/shiki'
+
+const markdown = ref('# Hello World\n\nThis is **streaming** markdown.')
+</script>
+
+<template>
+  <Markdown :value="markdown" :plugins="[shiki()]" />
+</template>
+```
+
+> [!NOTE]
+> 
+> The `shiki` plugin adds syntax highlighting to code blocks. Use the `:streaming` prop when rendering content that arrives incrementally, such as AI responses.
+> 
+> To support dark mode, add the following CSS to your stylesheet:
+> 
+> ```css [main.css]
+> html.dark .shiki span {
+>   color: var(--shiki-dark) !important;
+>   background-color: var(--shiki-dark-bg) !important;
+>   font-style: var(--shiki-dark-font-style) !important;
+>   font-weight: var(--shiki-dark-font-weight) !important;
+>   text-decoration: var(--shiki-dark-text-decoration) !important;
+> }
+> ```
+
+> [!TIP]
+> See: /docs/components/chat
+> 
+> See the **Chat** component for a full example of using Comark to render AI chat messages.
+
+### With MarkdownDocument
+
+Use the [`<MarkdownDocument>`](https://comark.dev/rendering/vue#code-markdowndocument-code) component to render a pre-parsed `MarkdownDocument` without shipping any parser or plugin code to the browser. This is useful when parsing happens on the server, in a build step, or via an API.
+
+**Nuxt:**
+
+```vue
+<script setup lang="ts">
+const { data: tree } = await useFetch('/api/content')
+</script>
+
+<template>
+  <MarkdownDocument v-if="tree" :value="tree" />
+</template>
+```
+
+**Vue:**
+
+```vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { MarkdownDocument } from '@comark/vue'
+
+const tree = ref()
+
+onMounted(async () => {
+  tree.value = await fetch('/api/content').then(r => r.json())
+})
+</script>
+
+<template>
+  <MarkdownDocument v-if="tree" :value="tree" />
+</template>
+```
+
+### With Prose components
+
+Use prose components directly in Vue templates for maximum control:
+
+```vue
+<template>
+  <ProseTable>
+    <ProseThead>
+      <ProseTr>
+        <ProseTh>Prop</ProseTh>
+        <ProseTh>Default</ProseTh>
+      </ProseTr>
+    </ProseThead>
+    <ProseTbody>
+      <ProseTr>
+        <ProseTd>
+          <ProseCode>color</ProseCode>
+        </ProseTd>
+        <ProseTd>
+          <ProseCode>neutral</ProseCode>
+        </ProseTd>
+      </ProseTr>
+    </ProseTbody>
+  </ProseTable>
+</template>
+```
+
+## MDC Syntax
+
+Markdown elements are automatically mapped to prose components: `# Heading` becomes `<ProseH1>`, `**bold**` becomes `<ProseStrong>`, ``code`` becomes `<ProseCode>`, and so on.
+
+[MDC Syntax](https://content.nuxt.com/docs/files/markdown#mdc-syntax) goes further by letting you use Vue components directly inside markdown. It is supported by Nuxt Content, Nuxt MDC and Comark.
+
+````mdc
+Regular markdown with **bold** and *italic* text.
+
+::callout{icon="i-lucide-rocket" color="primary"}
+Use MDC components for rich interactions!
+::
+
+::tabs
+
+:::tabs-item{label="Installation"}
+Use pnpm add @nuxt/ui to install
+:::
+
+:::tabs-item{label="Usage"}
+Import components and use them in your templates
+:::
+
+::
+
+::code-group
+
+```bash [pnpm]
+pnpm add @nuxt/ui
+```
+
+```bash [yarn]
+yarn add @nuxt/ui
+```
+
+```bash [npm]
+npm install @nuxt/ui
+```
+
+```bash [bun]
+bun add @nuxt/ui
+```
+
+::
+````
+
+## Theme
+
+Override any prose component styling in your app configuration:
+
+**Nuxt:**
+
+```ts [app/app.config.ts]
+export default defineAppConfig({
+  ui: {
+    prose: {
+      h1: {
+        slots: {
+          base: 'scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl'
+        }
+      },
+      p: {
+        base: 'leading-7 [&:not(:first-child)]:mt-6'
+      }
+    }
+  }
+})
+```
+
+**Vue:**
+
+```ts [vite.config.ts]
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import ui from '@nuxt/ui/vite'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    ui({
+      ui: {
+        prose: {
+          h1: {
+            slots: {
+              base: 'scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl'
+            }
+          },
+          p: {
+            base: 'leading-7 [&:not(:first-child)]:mt-6'
+          }
+        }
+      }
+    })
+  ]
+})
+```
+
+
+## Sitemap
+
+See the full [sitemap](https://ui.nuxt.com/sitemap.md) for all pages.
